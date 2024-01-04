@@ -27,6 +27,7 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 .env
+firebase.json
 
 # IDE - VSCode
 .vscode/*

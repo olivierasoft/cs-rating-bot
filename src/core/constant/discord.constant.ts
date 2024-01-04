@@ -1,5 +1,6 @@
 export const DiscordConstant = {
   providers: {
-    DISCORD: "DISCORD"
+    DISCORD: "DISCORD",
+    REST: "REST"
   }
 };

@@ -5,9 +5,10 @@ import { RegisterSlashCommandUseCase } from "./use-case/register-slash-command.u
 import { RestModule } from "@/config/rest/rest.module";
 import { EvaluatePlayerUseCase } from "./use-case/evaluate-player.usecase";
 import { CreateLobbyUseCase } from "./use-case/create-lobby.usecase";
+import { FirestoreModule } from "@/core/firestore/firestore.module";
 
 @Module({
-  imports: [DiscordModule, RestModule],
+  imports: [DiscordModule, RestModule, FirestoreModule],
   providers: [
     ReceiveUserMessageUseCase, 
     RegisterSlashCommandUseCase, 

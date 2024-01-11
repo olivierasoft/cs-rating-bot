@@ -4,7 +4,8 @@ import {
   Client,
   CommandInteraction,
   Events,
-  SlashCommandBuilder
+  SlashCommandBuilder,
+  TextChannel
 } from "discord.js";
 import { RegisterSlashCommandUseCase } from "./register-slash-command.usecase";
 import { EvaluatePlayerUseCase } from "./evaluate-player.usecase";
@@ -18,6 +19,7 @@ export class ReceiveUserMessageUseCase {
     private createLobbyUseCase: CreateLobbyUseCase
   ) {
     this.discord.on(Events.ClientReady, () => {
+      
 
       ["unhandledRejection", "uncaughtException"].forEach(error => {
         process.on(error, () => {

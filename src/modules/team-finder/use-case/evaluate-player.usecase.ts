@@ -1,5 +1,13 @@
 import { Injectable } from "@nestjs/common";
-import { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { 
+  ActionRowBuilder, 
+  Client, 
+  CommandInteraction, 
+  ModalBuilder, 
+  TextChannel, 
+  TextInputBuilder, 
+  TextInputStyle 
+} from "discord.js";
 
 @Injectable()
 export class EvaluatePlayerUseCase {
@@ -45,5 +53,70 @@ export class EvaluatePlayerUseCase {
     textInputBuilders.forEach(textInputBuilder => modalBuilder.addComponents(textInputBuilder));
 
     return modalBuilder;
+  }
+
+  async registerEvaluationMessage(commandInteraction: CommandInteraction, discord: Client): Promise<void> {
+    await commandInteraction.showModal(this.sendEvaluatePlayerMessage());
+
+    const response = await commandInteraction.awaitModalSubmit({
+      time: 60000 * 6,
+    });
+
+    const reviewChannel = 
+            discord.channels.cache.get(process.env.DISCORD_PRIVATE_REVIEW_CHANNEL_ID) as TextChannel;
+            
+    const reviewEmbed = {
+      title: "Essa foi sua avaliação.",
+      description: `Jogador avaliado: ${response.user}`,
+      color: 15844367,
+      fields: [
+        {
+          name: "Comunicação",
+          value: response.fields.getField("comunication").value,
+          inline: false
+        },
+        {
+          name: "Uso de granadas",
+          value: response.fields.getField("grenade").value,
+          inline: false
+        },
+        {
+          name: "Teamplay",
+          value: response.fields.getField("teamplay").value,
+          inline: false
+        },
+        {
+          name: "Comportamento In-game",
+          value: response.fields.getField("behavior").value,
+          inline: false
+        },
+        {
+          name: "Comentário",
+          value: response.fields.getField("someCommentary").value,
+          inline: false
+        }
+      ],
+      footer: {
+        text: "Desenvolvido por zewsz © 2024."
+      },
+      author: {
+        name: "Bot Zewsz",
+        //eslint-disable-next-line
+        icon_url: "https://static.wikia.nocookie.net/ageofempires/images/e/e7/ZeusPortrait.png/revision/latest?cb=20160602023355"
+      }
+    };
+
+    await reviewChannel.send({
+      embeds: [{
+        ...reviewEmbed,
+        description: 
+              `De: ${response.user}, Para: ${commandInteraction.options.get("jogador").user}`
+      }]
+    });
+
+    response.reply({
+      ephemeral: true,
+      embeds: [reviewEmbed]
+    });
   }
 }

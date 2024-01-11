@@ -21,6 +21,18 @@ export class RegisterSlashCommandUseCase {
             required: true,
           },
         ]
+      },
+      {
+        name: "lobby",
+        description: "Crie uma quantidade específica de lobby's",
+        options: [
+          {
+            name: "quantidade",
+            type: 10,
+            description: "Coloque a quantidade de lobby's que deseja criar",
+            required: true,
+          },
+        ]
       }
     ];
 

@@ -114,7 +114,7 @@ export class CreateLobbyUseCase {
       .setDescription(this.generateLobbyMessage(teams))
       .setColor("#FFD700")
       .setFooter({
-        text: "Desenvolvido por zewsz para uso no discord do Fallen",
+        text: "Desenvolvido por zewsz © 2024.",
       })
       .setTimestamp();
 

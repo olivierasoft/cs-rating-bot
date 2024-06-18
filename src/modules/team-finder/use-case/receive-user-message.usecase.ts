@@ -4,19 +4,20 @@ import {
   Client,
   CommandInteraction,
   Events,
-  SlashCommandBuilder,
-  TextChannel
+  SlashCommandBuilder
 } from "discord.js";
-import { RegisterSlashCommandUseCase } from "./register-slash-command.usecase";
-import { EvaluatePlayerUseCase } from "./evaluate-player.usecase";
 import { CreateLobbyUseCase } from "./create-lobby.usecase";
+import { EvaluatePlayerUseCase } from "./evaluate-player.usecase";
+import { RegisterSlashCommandUseCase } from "./register-slash-command.usecase";
+import { AuthorizationUseCase } from "./authorization.usecase";
 
 @Injectable()
 export class ReceiveUserMessageUseCase {
   constructor(@Inject(DiscordConstant.providers.DISCORD) private discord: Client, 
     private registerSlashCommandUseCase: RegisterSlashCommandUseCase,
     private evaluatePlayerUseCase: EvaluatePlayerUseCase,
-    private createLobbyUseCase: CreateLobbyUseCase
+    private createLobbyUseCase: CreateLobbyUseCase,
+    private authorizationUseCase: AuthorizationUseCase
   ) {
     this.discord.on(Events.ClientReady, () => {
       
@@ -40,6 +41,8 @@ export class ReceiveUserMessageUseCase {
         }
 
         if (commandInteraction.commandName === "lobby") {
+          await this.authorizationUseCase.allowOnlyAdministrator(commandInteraction);
+          
           await this.createLobbyUseCase.createLobby(commandInteraction);
         }
       });

@@ -6,6 +6,7 @@ import { RestModule } from "@/config/rest/rest.module";
 import { EvaluatePlayerUseCase } from "./use-case/evaluate-player.usecase";
 import { CreateLobbyUseCase } from "./use-case/create-lobby.usecase";
 import { FirestoreModule } from "@/core/firestore/firestore.module";
+import { AuthorizationUseCase } from "./use-case/authorization.usecase";
 
 @Module({
   imports: [DiscordModule, RestModule, FirestoreModule],
@@ -13,7 +14,8 @@ import { FirestoreModule } from "@/core/firestore/firestore.module";
     ReceiveUserMessageUseCase, 
     RegisterSlashCommandUseCase, 
     EvaluatePlayerUseCase,
-    CreateLobbyUseCase
+    CreateLobbyUseCase,
+    AuthorizationUseCase
   ],
 })
 export class TeamFinderModule {}

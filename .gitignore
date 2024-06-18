@@ -29,6 +29,7 @@ Key.json
 *.sublime-workspace
 .env
 firebase.json
+Key.json
 
 # IDE - VSCode
 .vscode/*

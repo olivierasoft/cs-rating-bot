@@ -133,15 +133,13 @@ export class EvaluatePlayerUseCase {
     if (!authorSnapshots?.docs?.length) {
       await this.firestore.collection("user").add(
         {
-          id: commandInteraction.user.id,
+          discordId: commandInteraction.user.id,
           reviews: [
             review
           ]
         } as Partial<IUser>
       );
     }
-
-    console.log("Realizando Update...");
 
     authorSnapshots.forEach(snapshot => snapshot.ref.update({
       reviews: FieldValue.arrayUnion(review)

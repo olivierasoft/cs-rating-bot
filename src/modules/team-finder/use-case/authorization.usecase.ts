@@ -32,6 +32,5 @@ export class AuthorizationUseCase {
 
       throw new Error(`User is not administrator: ${interaction.user.id}`);
     }
-    return;
   }
 }

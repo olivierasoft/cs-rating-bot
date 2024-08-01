@@ -1,21 +1,9 @@
 import { DiscordModule } from "@/config/discord/discord.module";
 import { Module } from "@nestjs/common";
-import { ReceiveUserMessageUseCase } from "./use-case/receive-user-message.usecase";
-import { RegisterSlashCommandUseCase } from "./use-case/register-slash-command.usecase";
-import { RestModule } from "@/config/rest/rest.module";
-import { EvaluatePlayerUseCase } from "./use-case/evaluate-player.usecase";
-import { CreateLobbyUseCase } from "./use-case/create-lobby.usecase";
-import { FirestoreModule } from "@/core/firestore/firestore.module";
-import { AuthorizationUseCase } from "./use-case/authorization.usecase";
+import { MatchmakingModule } from "../matchmaking/matchmaking.module";
 
 @Module({
-  imports: [DiscordModule, RestModule, FirestoreModule],
-  providers: [
-    ReceiveUserMessageUseCase, 
-    RegisterSlashCommandUseCase, 
-    EvaluatePlayerUseCase,
-    CreateLobbyUseCase,
-    AuthorizationUseCase
-  ],
+  imports: [DiscordModule, MatchmakingModule ],
+  providers: [],
 })
 export class TeamFinderModule {}

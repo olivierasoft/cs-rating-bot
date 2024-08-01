@@ -33,6 +33,10 @@ export class RegisterSlashCommandUseCase {
             required: true,
           },
         ]
+      },
+      {
+        name: "configurar",
+        description: "Configurar os canais específicos de channel",
       }
     ];
 

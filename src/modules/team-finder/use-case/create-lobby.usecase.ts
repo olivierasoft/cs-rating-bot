@@ -30,6 +30,7 @@ export class CreateLobbyUseCase {
         ephemeral: true,
       });
     }
+    
 
     const banlistCollection = (await this.firestore
       .collection("banlist")
@@ -69,7 +70,7 @@ export class CreateLobbyUseCase {
     return fullMessage;
   }
 
-  async createLobby(interaction: CommandInteraction): Promise<void> {
+  async createLobby(interaction: CommandInteraction): Promise<void> {    
     const member = await interaction.guild.members.fetch({
       user: interaction.user,
     });

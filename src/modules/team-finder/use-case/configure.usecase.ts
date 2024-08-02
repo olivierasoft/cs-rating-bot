@@ -81,7 +81,7 @@ export class ConfigureUseCase {
     
     const modalBuilder = new ModalBuilder()
       .setTitle("NÃO MECHER!")
-      .setCustomId("MODAL_ID");
+      .setCustomId("MODALID");
     
     textInputBuilders.forEach((textInputBuilder) => modalBuilder.addComponents(textInputBuilder));
     

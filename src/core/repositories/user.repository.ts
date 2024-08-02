@@ -11,13 +11,10 @@ export class UserRepository {
 
   constructor(@Inject(FirestoreConstant.FIRESTORE_PROVIDER) private firestore: Firestore) {}
 
-  async create(user: Partial<IUser>): Promise<IUser> {
+  async create(user: Partial<IUser>): Promise<QueryDocumentSnapshot<IUser, DocumentData>> {
     const documentRef = await this.userCollection.add(user);
 
-    return {
-      id: documentRef.id,
-      ...user
-    } as IUser;
+    return await documentRef.get() as QueryDocumentSnapshot<IUser, DocumentData>;
   }
 
   async getById(id: string): Promise<IUser | null> {
@@ -37,7 +34,7 @@ export class UserRepository {
     const documentSnapshot = await this.userCollection.where("discordId", "==", discordId).get() as QuerySnapshot<IUser>;
 
     if (documentSnapshot.docs.length) {
-      return documentSnapshot[0];
+      return documentSnapshot.docs[0];
     }
 
     return null;

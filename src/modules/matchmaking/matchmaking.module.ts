@@ -11,6 +11,7 @@ import { AuthorizationUseCase } from "../team-finder/use-case/authorization.usec
 import { ConfigureUseCase } from "../team-finder/use-case/configure.usecase";
 import { InteractionCommandUseCase } from "./use-case/interaction-command.usecase";
 import { RestModule } from "@/config/rest/rest.module";
+import { GamersclubInformationUseCase } from "./use-case/gamersclub-information.usecase";
 
 @Module({
   imports: [FirestoreModule, DiscordModule, RestModule],
@@ -24,6 +25,7 @@ import { RestModule } from "@/config/rest/rest.module";
     CreateLobbyUseCase,
     AuthorizationUseCase,
     ConfigureUseCase, 
+    GamersclubInformationUseCase,
     UserRepository
   ],
   exports: [CreateLobbyUseCase, VoiceMemberUpdateUseCase]

@@ -25,7 +25,6 @@ export class ReceiveUserMessageUseCase {
       });
 
       this.registerSlashCommandUseCase.addReviewPlayerCommand();
-
       this.voiceMemberUpdateUseCase.captureVoiceMemberUpdateEvent();
       this.interactionCommandUseCase.captureInteractionCommandEvent();
     });

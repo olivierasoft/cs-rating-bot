@@ -20,7 +20,6 @@ export class InteractionCommandUseCase {
                 
       if (interaction instanceof ButtonInteraction) {
         if (interaction.customId === "join-queue-modal") {
-    
           await this.createLobbyUseCase.joinLobby(interaction);
         }
       }

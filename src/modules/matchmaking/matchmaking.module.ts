@@ -12,6 +12,9 @@ import { ConfigureUseCase } from "../team-finder/use-case/configure.usecase";
 import { InteractionCommandUseCase } from "./use-case/interaction-command.usecase";
 import { RestModule } from "@/config/rest/rest.module";
 import { GamersclubInformationUseCase } from "./use-case/gamersclub-information.usecase";
+import { ConfigRepository } from "@/core/repositories/config.repository";
+import { QueueUseCase } from "./use-case/queue.usecase";
+import { QueueLoggingUseCase } from "./use-case/queue-logging.usecase";
 
 @Module({
   imports: [FirestoreModule, DiscordModule, RestModule],
@@ -26,7 +29,10 @@ import { GamersclubInformationUseCase } from "./use-case/gamersclub-information.
     AuthorizationUseCase,
     ConfigureUseCase, 
     GamersclubInformationUseCase,
-    UserRepository
+    UserRepository,
+    ConfigRepository,
+    QueueUseCase,
+    QueueLoggingUseCase
   ],
   exports: [CreateLobbyUseCase, VoiceMemberUpdateUseCase]
 })

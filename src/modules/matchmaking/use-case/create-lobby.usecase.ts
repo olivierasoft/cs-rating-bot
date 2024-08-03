@@ -5,13 +5,17 @@ import { DocumentData, QueryDocumentSnapshot } from "@google-cloud/firestore";
 import { Injectable } from "@nestjs/common";
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ComponentType, ModalBuilder, ModalSubmitInteraction, TextInputBuilder, TextInputStyle } from "discord.js";
 import { GamersclubInformationUseCase } from "./gamersclub-information.usecase";
+import { ConfigRepository } from "@/core/repositories/config.repository";
+import { QueueUseCase } from "./queue.usecase";
 
 @Injectable()
 export class CreateLobbyUseCase {
 
   constructor(
     private userRepository: UserRepository, 
-    private gamersclubInformationUseCase: GamersclubInformationUseCase
+    private configRepository: ConfigRepository,
+    private gamersclubInformationUseCase: GamersclubInformationUseCase,
+    private queueUseCase: QueueUseCase
   ) {}
 
   configureGamersclubVinculationModalBuilder(): ModalBuilder {
@@ -35,23 +39,25 @@ export class CreateLobbyUseCase {
   }
 
   async refreshGamersclubInformation(
-    interaction: ModalSubmitInteraction<CacheType>,
+    originalInteraction: ButtonInteraction,
+    modalInteraction: ModalSubmitInteraction<CacheType>,
     userSnapshot: QueryDocumentSnapshot<IUser, DocumentData>,    
   ): Promise<void> {
     const urlRegex = /^https:\/\/gamersclub\.com\.br\/player\/\d{1,10}$/g;
 
-    const inputValue = interaction.fields.getField(CustomIdConstant.VINCULATE_GC_LINK_INPUT).value;
+    modalInteraction.deferUpdate();
 
-    await interaction.deferReply({
-      ephemeral: true
-    });
+    const inputValue = modalInteraction.fields.getField(CustomIdConstant.VINCULATE_GC_LINK_INPUT).value;
 
     if (!urlRegex.test(inputValue)) {
-      
-
-      await interaction.editReply({
-        content: "O URL que você informou é inválido",
+      await originalInteraction.editReply({
+        content: "O URL que você informou é inválido, tente novamente",
+        components: []
       });
+
+      setTimeout(() => {
+        originalInteraction.deleteReply();
+      }, 5 * 1000);
 
       return;
     }
@@ -60,20 +66,72 @@ export class CreateLobbyUseCase {
       await this.gamersclubInformationUseCase
         .setGamersclubProfile(inputValue, userSnapshot);
       
-      await interaction.editReply({
+      await originalInteraction.editReply({
         content: "O seu perfil da gamersclub foi vinculado, clique novamente para entrar na fila!",
       });
 
-    } catch(e) {
-      await interaction.editReply({
-        content: "Não foi possível salvar as informações do seu perfil gamersclub, contate um adminstrador",
-      });      
+      setTimeout(() => {
+        originalInteraction.deleteReply();
+      }, 10 * 1000);
 
+    } catch(e) {
+      await originalInteraction.editReply({
+        content: "Não foi possível salvar as informações do seu perfil gamersclub, contate um adminstrador",
+      });     
+
+      setTimeout(() => {
+        originalInteraction.deleteReply();
+      }, 10 * 1000);
     }
+
   }
 
   async joinLobby(interaction: ButtonInteraction): Promise<void> {
-    
+
+    await interaction.deferReply({ ephemeral: true });
+
+    const user = await interaction.guild.members.fetch({
+      user: interaction.user,
+    });
+
+    const userVoiceChannel = user?.voice?.channel;
+
+    if (!userVoiceChannel) {
+      await interaction.editReply({
+        content: "Você precisa estar conectado ao canal de voz do Mix para entrar na fila, entre no canal e tente novamente..."
+      });
+
+      setTimeout(async () => {
+        await interaction.deleteReply();
+      }, 5 * 1000);
+
+      return;
+    }
+
+    const configDocument = await this.configRepository.getConfigurations();
+
+    if (!configDocument?.data()?.mixChannelId) {
+      await interaction.editReply({
+        content: "Houve um erro de configuração, contate um administrador..."
+      });
+
+      setTimeout(async () => {
+        await interaction.deleteReply();
+      }, 5 * 1000);
+    }
+
+    if (userVoiceChannel.id !== configDocument.data().mixChannelId) {
+      await interaction.editReply({
+        content: "Entre no canal de voz do Mix para entrar na fila"
+      });
+
+      setTimeout(async () => {
+        await interaction.deleteReply();
+      }, 5 * 1000);
+
+      return;
+    }
+
     let userSnapshot = await this.userRepository.getByDiscordId(interaction.user.id);
 
     if (!userSnapshot) {
@@ -93,56 +151,61 @@ export class CreateLobbyUseCase {
           .setStyle(ButtonStyle.Success) 
       ) as ActionRowBuilder<ButtonBuilder>;
 
-      await interaction.deferReply({ ephemeral: true });
-
-      const response = await interaction.followUp({
+      const response = await interaction.editReply({
         content: "Você precisa vincular seu perfil da Gamersclub para continuar",
         components: [actionRowBuilder],
       });
+
+      const deleteMessageTimeout = setTimeout(() => {
+        interaction.deleteReply();
+      }, 10 * 1000);
 
       const messageComponent = await response.awaitMessageComponent({
         componentType: ComponentType.Button,
         time: 2 * 60 * 1000
       });
 
-      await messageComponent.showModal(this.configureGamersclubVinculationModalBuilder());
-
-      const modalSubmitResponse = await messageComponent.awaitModalSubmit({
-        time: 2 * 60 * 1000,
-        filter: (i) => {
-          const isSameUser = i.user.id === interaction.user.id;
-
-          const isGamersclubModal = i.customId === CustomIdConstant.VINCULATE_GC_MODAL;
-
-          return isSameUser && isGamersclubModal;
-        },
+      interaction.editReply({
+        content: "Aguardando interação...",
+        components: []
       });
 
+      clearTimeout(deleteMessageTimeout);
+
+      await messageComponent.showModal(this.configureGamersclubVinculationModalBuilder());
+
+
       try {  
-        
+        const modalSubmitResponse = await messageComponent.awaitModalSubmit({
+          time: 5 * 60 * 1000,
+          filter: (i) => {
+            const isSameUser = i.user.id === interaction.user.id;
+  
+            const isGamersclubModal = i.customId === CustomIdConstant.VINCULATE_GC_MODAL;
+  
+            return isSameUser && isGamersclubModal;
+          },
+        });
+
         await this.refreshGamersclubInformation(
+          interaction,
           modalSubmitResponse, 
           userSnapshot,
         );
       } catch(e) {
-        console.log(e);
+        await interaction.editReply({
+          content: "Aconteceu algum erro ou você demorou muito para responder"
+        });
       }
-
       return;
     }
 
     await this.gamersclubInformationUseCase
       .persistGamersclubData(userSnapshot);
 
-    await interaction.deferReply({
-      ephemeral: true
+    this.queueUseCase.addPlayerInQueue$.next({
+      interaction,
+      user: userSnapshot.data()
     });
-
-    const response = await interaction.editReply({
-      content: "Tudo certo patrao",
-    });
-
-
-    setTimeout(() => { response.delete(); }, 5000);
   }
 }

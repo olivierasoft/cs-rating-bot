@@ -5,6 +5,6 @@ export class IPlayer {
   nickname: string;
   score: number;
   level: number;
-  premium: string;
+  premium: boolean;
   steamId: string;
 }

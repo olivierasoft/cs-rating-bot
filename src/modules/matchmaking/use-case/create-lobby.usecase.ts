@@ -147,8 +147,6 @@ export class CreateLobbyUseCase {
 
     if (!this.queueUseCase.voiceChannelId) {
 
-      console.log(configDocument.data());
-
       this.queueUseCase.voiceChannelId = configDocument.data().mixChannelId; 
     }
 
@@ -241,8 +239,36 @@ export class CreateLobbyUseCase {
       return;
     }
 
-    await this.gamersclubInformationUseCase
-      .persistGamersclubData(userSnapshot);
+    try {
+      await this.gamersclubInformationUseCase
+        .persistGamersclubData(userSnapshot);
+    } catch(e) {
+      await interaction.editReply({
+        content: "Aconteceu um erro no momento de puxar suas informações da Gamersclub, tente novamente ou entre em contato com um administrador."
+      });
+
+      setTimeout(() => {
+        interaction.deleteReply();
+      }, 10 * 1000);
+      
+      return;
+    }
+
+    const userChannel = await userVoiceChannel.fetch(true);
+
+    const userRemainsInChannel = userChannel?.members.find(user => user.id === interaction.user.id);
+
+    if (!userRemainsInChannel) {
+      interaction.editReply({
+        content: "Aparentemente você saiu da sala antes de completar o processo de entrar na fila."
+      });
+
+      setTimeout(async () => {
+        await interaction.deleteReply();
+      }, 10 * 1000);
+      
+      return;
+    }
 
     this.queueUseCase.setUserInQueue({
       interaction,

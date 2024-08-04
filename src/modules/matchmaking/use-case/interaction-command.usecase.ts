@@ -28,9 +28,6 @@ export class InteractionCommandUseCase {
         }
 
         if (interaction.customId === CustomIdConstant.LEAVE_QUEUE_BTN) {
-
-          console.log("Here");
-
           await this.createLobbyUseCase.leaveQueue(interaction);
         }
       }

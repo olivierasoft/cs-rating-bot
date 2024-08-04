@@ -3,6 +3,12 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import { Embed, MessageComponentInteraction } from "discord.js";
 import { Subject } from "rxjs";
 import { QueueLoggingUseCase } from "./queue-logging.usecase";
+import { CreateMatchUseCase } from "./create-match.usecase";
+
+export interface ICreateMatch {
+  interaction: MessageComponentInteraction,
+  users: IUser[];
+}
 
 export interface ISetPlayerInQueue {
   interaction: MessageComponentInteraction,
@@ -15,7 +21,7 @@ export interface ISetPlayerInQueue {
 export class QueueUseCase implements OnModuleInit {
   private users: IUser[] = [];
 
-  private queueIsReady$ = new Subject<IUser[]>();
+  private queueIsReady$ = new Subject<ICreateMatch>();
 
   private setPlayerInQueue$ = new Subject<ISetPlayerInQueue>;
 
@@ -23,9 +29,17 @@ export class QueueUseCase implements OnModuleInit {
 
   voiceChannelId?: string;
 
-  constructor(private queueLoggingUseCase: QueueLoggingUseCase) {}
+  constructor(
+    private queueLoggingUseCase: QueueLoggingUseCase,
+    private createMatchUseCase: CreateMatchUseCase
+  ) {}
 
   onModuleInit(): void {    
+
+    this.queueIsReady$.subscribe(match => {
+      this.createMatchUseCase.createMatch(match);
+    });
+
     this.queueLoggingUseCase.logChange$.subscribe(interaction => {
       const newDescription = this
         .getUserInQueueMessageEmbed(interaction.message.embeds[0].description);
@@ -56,7 +70,7 @@ export class QueueUseCase implements OnModuleInit {
           return;
         }
 
-        this._addUserToQueue(config.user);
+        this._addUserToQueue(config.user, config.interaction);
 
         await config.interaction.deleteReply();
 
@@ -103,7 +117,7 @@ export class QueueUseCase implements OnModuleInit {
     });
   }
 
-  private _addUserToQueue(user: IUser): void {
+  private async _addUserToQueue(user: IUser, interaction: MessageComponentInteraction): Promise<void> {
     if (this.users.length < 10) {
       this.users.push(user);
 
@@ -111,8 +125,14 @@ export class QueueUseCase implements OnModuleInit {
     }
 
     this.users.push(user);
-    this.queueIsReady$.next(this.users);
-    this.users = [];
+    
+    this.queueIsReady$.next({
+      interaction,
+      users: this.users.slice(0, 11)
+    });
+    this.users = this.users.filter((_, index) => index >= 10);
+
+    this.queueLoggingUseCase.showLogChanges(interaction);
   }
 
   private _removeUserFromQueue(config: ISetPlayerInQueue): void {

@@ -1,14 +1,11 @@
 import { IGamersclubUser } from "@/core/interfaces/gamersclub-user.interface";
 import { IUser } from "@/core/interfaces/user.interface";
-import { UserRepository } from "@/core/repositories/user.repository";
 import { DocumentData, QueryDocumentSnapshot } from "@google-cloud/firestore";
 import { Injectable } from "@nestjs/common";
 import axios from "axios";
 
 @Injectable()
 export class GamersclubInformationUseCase {
-  constructor(private userRepository: UserRepository) {}
-
   async setGamersclubProfile(
     profileLink: string,
     userSnapshot: QueryDocumentSnapshot<IUser, DocumentData>
@@ -30,9 +27,11 @@ export class GamersclubInformationUseCase {
 
       const gamersclubUser = response.data as IGamersclubUser;
 
-      // console.log(gamersclubUser);
+      await userSnapshot.ref.set({
+        gamersclub: gamersclubUser
+      }, { merge: true });
+      
     } catch(e) {
-      console.log(e);
       throw e;
     }
   }

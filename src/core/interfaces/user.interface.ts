@@ -1,3 +1,4 @@
+import { IGamersclubUser } from "./gamersclub-user.interface";
 import { IReview } from "./review.interface";
 
 export interface IUser {
@@ -6,4 +7,5 @@ export interface IUser {
   administrator: boolean;
   gcId: string;
   reviews: IReview[];
+  gamersclub: IGamersclubUser;
 }

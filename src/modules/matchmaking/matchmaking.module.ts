@@ -15,6 +15,7 @@ import { GamersclubInformationUseCase } from "./use-case/gamersclub-information.
 import { ConfigRepository } from "@/core/repositories/config.repository";
 import { QueueUseCase } from "./use-case/queue.usecase";
 import { QueueLoggingUseCase } from "./use-case/queue-logging.usecase";
+import { CreateMatchUseCase } from "./use-case/create-match.usecase";
 
 @Module({
   imports: [FirestoreModule, DiscordModule, RestModule],
@@ -32,7 +33,8 @@ import { QueueLoggingUseCase } from "./use-case/queue-logging.usecase";
     UserRepository,
     ConfigRepository,
     QueueUseCase,
-    QueueLoggingUseCase
+    QueueLoggingUseCase,
+    CreateMatchUseCase
   ],
   exports: [CreateLobbyUseCase, VoiceMemberUpdateUseCase]
 })

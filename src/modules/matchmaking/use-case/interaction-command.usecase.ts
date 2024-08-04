@@ -4,6 +4,7 @@ import { EvaluatePlayerUseCase } from "@/modules/team-finder/use-case/evaluate-p
 import { Inject, Injectable } from "@nestjs/common";
 import { ButtonInteraction, Client, CommandInteraction, Events } from "discord.js";
 import { CreateLobbyUseCase } from "./create-lobby.usecase";
+import { CustomIdConstant } from "@/core/constant/custom-id.constant";
 
 @Injectable()
 export class InteractionCommandUseCase {
@@ -19,8 +20,18 @@ export class InteractionCommandUseCase {
     this.discord.on(Events.InteractionCreate, async (interaction) => { 
                 
       if (interaction instanceof ButtonInteraction) {
-        if (interaction.customId === "join-queue-modal") {
+        console.log(interaction.customId);
+        if (interaction.customId === CustomIdConstant.JOIN_QUEUE_BTN) {
+          
+          
           await this.createLobbyUseCase.joinLobby(interaction);
+        }
+
+        if (interaction.customId === CustomIdConstant.LEAVE_QUEUE_BTN) {
+
+          console.log("Here");
+
+          await this.createLobbyUseCase.leaveQueue(interaction);
         }
       }
     

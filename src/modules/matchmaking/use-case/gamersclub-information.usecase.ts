@@ -30,7 +30,7 @@ export class GamersclubInformationUseCase {
 
       const gamersclubUser = response.data as IGamersclubUser;
 
-      console.log(gamersclubUser);
+      // console.log(gamersclubUser);
     } catch(e) {
       console.log(e);
       throw e;

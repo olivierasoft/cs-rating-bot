@@ -1,3 +1,4 @@
+import { CustomIdConstant } from "@/core/constant/custom-id.constant";
 import { Injectable } from "@nestjs/common";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChannelType, CommandInteraction, EmbedBuilder, ModalBuilder, ModalSubmitInteraction, TextChannel, TextInputBuilder, TextInputStyle } from "discord.js";
 
@@ -33,18 +34,18 @@ export class ConfigureUseCase {
         });
       }
 
-      const embedDescription = "Para entrar na fila de lobbies de Counter-Strike, clique no botão abaixo. Assim, você será colocado na fila e poderá começar a jogar com seus amigos em breve. Boa sorte e divirta-se!";
+      const embedDescription = "Para entrar na fila de lobbies de Counter-Strike, clique no botão abaixo. Assim, você será colocado na fila e poderá começar a jogar com seus amigos em breve. Boa sorte e divirta-se!\n\nQuantidade de jogadores na fila: 0";
 
       const actionRowBuilder = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setLabel("Entrar na fila")
             .setStyle(ButtonStyle.Success)
-            .setCustomId("join-queue-modal"),
+            .setCustomId(CustomIdConstant.JOIN_QUEUE_BTN),
           new ButtonBuilder()
             .setLabel("Sair da fila")
             .setStyle(ButtonStyle.Danger)
-            .setCustomId("leave-queue-modal")
+            .setCustomId(CustomIdConstant.LEAVE_QUEUE_BTN)
         ) as ActionRowBuilder<ButtonBuilder>;
 
       await channel.send({

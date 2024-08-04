@@ -1,35 +1,81 @@
 import { IUser } from "@/core/interfaces/user.interface";
 import { Injectable, OnModuleInit } from "@nestjs/common";
-import { MessageComponentInteraction } from "discord.js";
-import { Subject, take } from "rxjs";
+import { Embed, MessageComponentInteraction } from "discord.js";
+import { Subject } from "rxjs";
+import { QueueLoggingUseCase } from "./queue-logging.usecase";
 
-export interface IUserRemovedFromQueue {
-  reason: string;
-  user: IUser
-}
-
-export interface ITryAddUserInQueue {
+export interface ISetPlayerInQueue {
   interaction: MessageComponentInteraction,
   user: IUser
+  operation: "remove" | "add"
+  reason?: string;
 }
 
 @Injectable()
 export class QueueUseCase implements OnModuleInit {
-  users: IUser[] = [];
+  private users: IUser[] = [];
 
-  queueIsReady$ = new Subject<IUser[]>();
-  playerAddedToQueue$ = new Subject<IUser>();
-  userRemovedFromQueue$ = new Subject<IUserRemovedFromQueue>;
+  private queueIsReady$ = new Subject<IUser[]>();
 
-  addPlayerInQueue$ = new Subject<ITryAddUserInQueue>;
+  private setPlayerInQueue$ = new Subject<ISetPlayerInQueue>;
 
-  onModuleInit(): void {
-    this.addPlayerInQueue$.subscribe(async config => {
+  queueTextChannelId?: string;
+
+  voiceChannelId?: string;
+
+  constructor(private queueLoggingUseCase: QueueLoggingUseCase) {}
+
+  onModuleInit(): void {    
+    this.queueLoggingUseCase.logChange$.subscribe(interaction => {
+      const newDescription = this
+        .getUserInQueueMessageEmbed(interaction.message.embeds[0].description);
+
+      interaction.message.edit({
+        embeds: [{
+          color: interaction.message.embeds[0].color,
+          title: interaction.message.embeds[0].title,
+          description: newDescription
+        } as Embed]
+      });
+    });
+
+    this.setPlayerInQueue$.subscribe(async config => {
+
       const userInQueue = this.users.some(u => config.user.discordId === u.discordId);
 
-      if (userInQueue) {
+      if (config.operation === "add") {
+        if (userInQueue) {
+          await config.interaction.editReply({
+            content: "Você já está na fila, não se preocupe, assim que completar 10 jogadores, a lobby será criada."
+          });
+
+          setTimeout(async () => {
+            await config.interaction.deleteReply();
+          }, 5 * 1000);
+
+          return;
+        }
+
+        this._addUserToQueue(config.user);
+
+        await config.interaction.deleteReply();
+
+        const userJoinedMsg = await config.interaction.channel.send({
+          content: `O usuário <@${config.interaction.user.id}> entrou na fila, faltam ${this.users.length === 10 ? "nenhum" : 10 - this.users.length} jogadores para iniciar a partida.`
+        });
+
+        setTimeout(async () => {
+          await userJoinedMsg.delete();
+        }, 10 * 1000);
+
+        this.queueLoggingUseCase.showLogChanges(config.interaction);
+
+        return;
+      }
+
+      if (!userInQueue) {
         await config.interaction.editReply({
-          content: "Você já está na fila, não se preocupe, assim que completar 10 jogadores, a lobby será criada."
+          content: "Você ainda não entrou na fila."
         });
 
         setTimeout(async () => {
@@ -39,36 +85,62 @@ export class QueueUseCase implements OnModuleInit {
         return;
       }
 
-      this.addUserToQueue(config.user);
+      this._removeUserFromQueue(config);
 
-      await config.interaction.editReply({
-        content: "Você foi adicionado á fila"
-      });
+      await config.interaction.deleteReply();
+
+      const userLeavedQueueMsg = await config.interaction.channel.send({
+        content: `O usuário <@${config.interaction.user.id}> saiu da fila por conta própria`
+      });      
 
       setTimeout(async () => {
-        await config.interaction.deleteReply();
-      }, 5 * 1000);
+        userLeavedQueueMsg.delete();
+      }, 10 * 1000);
+
+      this.queueLoggingUseCase.showLogChanges(config.interaction);
+
+      return;
     });
   }
 
-  addUserToQueue(user: IUser): void {
+  private _addUserToQueue(user: IUser): void {
     if (this.users.length < 10) {
       this.users.push(user);
-      this.playerAddedToQueue$.next(user);
 
       return; 
     }
 
     this.users.push(user);
-
-    this.playerAddedToQueue$.next(user);
     this.queueIsReady$.next(this.users);
     this.users = [];
   }
 
-  removeUserFromQueue(userRemoved: IUserRemovedFromQueue): void {
-    this.users = this.users.filter(user => user.discordId === userRemoved.user.discordId);
+  private _removeUserFromQueue(config: ISetPlayerInQueue): void {
+    this.users = this.users.filter(user => user.discordId !== config.user.discordId);
+  }
 
-    this.userRemovedFromQueue$.next(userRemoved);
+  getUserInQueueMessageEmbed(oldDescription: string): string {
+    const userInQueueRegexr = /Quantidade de jogadores na fila: \d{1,10}/g;
+
+    const newPlayersInQueueMsg = 
+      `Quantidade de jogadores na fila: ${this.users.length}`;
+      
+
+    const newDescription = oldDescription
+      .replace(userInQueueRegexr, newPlayersInQueueMsg);
+
+    return newDescription;
+  }
+
+  getUsers(): IUser[] {
+    return this.users;
+  }
+
+  setUserInQueue(config: ISetPlayerInQueue): void {
+    this.setPlayerInQueue$.next(config);
+  }
+
+  setUsers(users: IUser[]): void {
+    this.users = users;
   }
 }

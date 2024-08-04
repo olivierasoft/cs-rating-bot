@@ -7,6 +7,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheT
 import { GamersclubInformationUseCase } from "./gamersclub-information.usecase";
 import { ConfigRepository } from "@/core/repositories/config.repository";
 import { QueueUseCase } from "./queue.usecase";
+import { QueueLoggingUseCase } from "./queue-logging.usecase";
 
 @Injectable()
 export class CreateLobbyUseCase {
@@ -15,7 +16,8 @@ export class CreateLobbyUseCase {
     private userRepository: UserRepository, 
     private configRepository: ConfigRepository,
     private gamersclubInformationUseCase: GamersclubInformationUseCase,
-    private queueUseCase: QueueUseCase
+    private queueUseCase: QueueUseCase,
+    private queueLoggingUseCase: QueueLoggingUseCase
   ) {}
 
   configureGamersclubVinculationModalBuilder(): ModalBuilder {
@@ -86,7 +88,40 @@ export class CreateLobbyUseCase {
 
   }
 
+  async leaveQueue(interaction: ButtonInteraction): Promise<void> {
+
+    const user = this.queueUseCase.getUsers()
+      .find(user => user.discordId === interaction.user.id);
+
+    await interaction.deferReply({
+      ephemeral: true
+    });
+
+    if (!user) {      
+      await interaction.editReply({
+        content: "Você não está na fila.",
+      });
+
+      setTimeout(() => {
+        interaction.deleteReply();
+      }, 10 * 1000);
+
+      return;
+    }
+
+    await this.queueUseCase.setUserInQueue({
+      operation: "remove",
+      interaction,
+      user: user,
+      reason: "Clicou para sair"
+    });
+  }
+
   async joinLobby(interaction: ButtonInteraction): Promise<void> {
+    if (!this.queueUseCase.queueTextChannelId) {
+      this.queueUseCase.queueTextChannelId = interaction.channel.id;
+    }
+    
 
     await interaction.deferReply({ ephemeral: true });
 
@@ -109,6 +144,13 @@ export class CreateLobbyUseCase {
     }
 
     const configDocument = await this.configRepository.getConfigurations();
+
+    if (!this.queueUseCase.voiceChannelId) {
+
+      console.log(configDocument.data());
+
+      this.queueUseCase.voiceChannelId = configDocument.data().mixChannelId; 
+    }
 
     if (!configDocument?.data()?.mixChannelId) {
       await interaction.editReply({
@@ -174,7 +216,6 @@ export class CreateLobbyUseCase {
 
       await messageComponent.showModal(this.configureGamersclubVinculationModalBuilder());
 
-
       try {  
         const modalSubmitResponse = await messageComponent.awaitModalSubmit({
           time: 5 * 60 * 1000,
@@ -203,9 +244,10 @@ export class CreateLobbyUseCase {
     await this.gamersclubInformationUseCase
       .persistGamersclubData(userSnapshot);
 
-    this.queueUseCase.addPlayerInQueue$.next({
+    this.queueUseCase.setUserInQueue({
       interaction,
-      user: userSnapshot.data()
+      user: userSnapshot.data(),
+      operation: "add"
     });
   }
 }
